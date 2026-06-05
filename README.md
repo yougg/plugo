@@ -113,3 +113,89 @@ make run
 The orchestrator runs two distinct stages:
 1. **Standard Concurrency Validation**: Launches all plugins, negotiates their protocols, dispatches multiple RPC requests in parallel with deeply nested schemas, and logs latencies.
 2. **Stream Routing & Multiplexing**: Connects to the Go MessagePack plugin and performs concurrent independent bidirectional, single-multi, and multi-single streaming tasks over a single physical connection using the new routing features.
+
+---
+
+## 5. Usage
+
+### Host Application
+
+```go
+package main
+
+import (
+	"context"
+	"log/slog"
+	"os"
+
+	"github.com/yougg/plugo"
+)
+
+func main() {
+	// 1. Open the plugin subprocess with specified codecs
+	plugin, err := plugo.Open(context.Background(), "./my-plugin", plugo.WithCodec(plugo.JSONCodec{}))
+	if err != nil {
+		slog.Error("failed to start plugin", "error", err)
+		os.Exit(1)
+	}
+	defer plugin.Close()
+
+	// 2. Send a message to the plugin
+	type Request struct { Command string }
+	err = plugo.WriteMessage(context.Background(), plugin.Conn(), Request{Command: "hello"})
+	if err != nil {
+		slog.Error("failed to write message", "error", err)
+		os.Exit(1)
+	}
+
+	// 3. Receive a message from the plugin
+	type Response struct { Reply string }
+	resp, err := plugo.ReadMessage[Response](context.Background(), plugin.Conn())
+	if err != nil {
+		slog.Error("failed to read message", "error", err)
+		os.Exit(1)
+	}
+	slog.Info("Plugin replied", "reply", resp.Reply)
+}
+```
+
+### Plugin Application
+
+```go
+package main
+
+import (
+	"context"
+	"log/slog"
+	"os"
+
+	"github.com/yougg/plugo"
+)
+
+func main() {
+	// 1. Attach to the host process
+	conn, err := plugo.Attaching(context.Background(), plugo.JSONCodec{})
+	if err != nil {
+		slog.Error("failed to attach to host", "error", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+
+	// 2. Wait for messages from the host
+	type Request struct { Command string }
+	req, err := plugo.ReadMessage[Request](context.Background(), conn)
+	if err != nil {
+		slog.Error("failed to read message", "error", err)
+		os.Exit(1)
+	}
+	slog.Info("Host says", "command", req.Command)
+
+	// 3. Send a response back
+	type Response struct { Reply string }
+	err = plugo.WriteMessage(context.Background(), conn, Response{Reply: "world"})
+	if err != nil {
+		slog.Error("failed to write message", "error", err)
+		os.Exit(1)
+	}
+}
+```

@@ -109,3 +109,89 @@ make run
 宿主服务将依次运行以下演示阶段：
 1. **基础并发调度测试**：并行拉起各个插件，自动与它们进行双向协议握手，通过不同的编码通道发起极高并发的深度嵌套结构化调度。
 2. **多路复用长流展示**：在同一物理通道上同时启动全双工流 (Bidirectional)、单发多收流 (Server-Streaming)、多发单收流 (Client-Streaming)，演示极低延迟的数据分发。
+
+---
+
+## 5. 使用示例 (Usage)
+
+### 宿主程序 (Host)
+
+```go
+package main
+
+import (
+	"context"
+	"log/slog"
+	"os"
+
+	"github.com/yougg/plugo"
+)
+
+func main() {
+	// 1. 启动并连接插件子进程，指定支持的编解码器
+	plugin, err := plugo.Open(context.Background(), "./my-plugin", plugo.WithCodec(plugo.JSONCodec{}))
+	if err != nil {
+		slog.Error("启动插件失败", "error", err)
+		os.Exit(1)
+	}
+	defer plugin.Close()
+
+	// 2. 向插件发送消息
+	type Request struct { Command string }
+	err = plugo.WriteMessage(context.Background(), plugin.Conn(), Request{Command: "hello"})
+	if err != nil {
+		slog.Error("发送消息失败", "error", err)
+		os.Exit(1)
+	}
+
+	// 3. 接收插件的响应消息
+	type Response struct { Reply string }
+	resp, err := plugo.ReadMessage[Response](context.Background(), plugin.Conn())
+	if err != nil {
+		slog.Error("接收消息失败", "error", err)
+		os.Exit(1)
+	}
+	slog.Info("插件回复", "reply", resp.Reply)
+}
+```
+
+### 插件程序 (Plugin)
+
+```go
+package main
+
+import (
+	"context"
+	"log/slog"
+	"os"
+
+	"github.com/yougg/plugo"
+)
+
+func main() {
+	// 1. 附加到宿主进程，完成握手协商
+	conn, err := plugo.Attaching(context.Background(), plugo.JSONCodec{})
+	if err != nil {
+		slog.Error("附加到宿主失败", "error", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+
+	// 2. 等待宿主发送消息
+	type Request struct { Command string }
+	req, err := plugo.ReadMessage[Request](context.Background(), conn)
+	if err != nil {
+		slog.Error("接收消息失败", "error", err)
+		os.Exit(1)
+	}
+	slog.Info("宿主发送", "command", req.Command)
+
+	// 3. 返回响应消息给宿主
+	type Response struct { Reply string }
+	err = plugo.WriteMessage(context.Background(), conn, Response{Reply: "world"})
+	if err != nil {
+		slog.Error("发送响应失败", "error", err)
+		os.Exit(1)
+	}
+}
+```
