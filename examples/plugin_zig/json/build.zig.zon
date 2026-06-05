@@ -1,0 +1,13 @@
+.{
+    .name = .plugin_zig_json,
+    .version = "0.0.1",
+    .fingerprint = 0x3a58649cf61144c,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

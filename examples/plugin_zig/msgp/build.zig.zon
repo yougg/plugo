@@ -1,0 +1,17 @@
+.{
+    .name = .plugin_zig_msgp,
+    .version = "0.0.1",
+    .fingerprint = 0xaca4099bbff14ed5,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .zig_msgpack = .{
+            .url = "https://github.com/zigcc/zig-msgpack/archive/refs/tags/0.0.17.tar.gz",
+            .hash = "zig_msgpack-0.0.14-evvueL5SBQACmim6j6klQ9wWIIG_UxGlPvVYdiNy0KT8",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
