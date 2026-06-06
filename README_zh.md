@@ -101,7 +101,7 @@ make build
 
 ### 2. 运行通信演示
 
-```bash
+```shell
 cd examples
 make run
 ```
@@ -195,3 +195,43 @@ func main() {
 	}
 }
 ```
+
+### 编译与运行该示例
+
+若要运行上述简易示例，可按照如下结构组织您的代码：
+
+1. **创建目录结构**：
+
+   ```text
+   my-project/
+   ├── host/
+   │   └── main.go  # 写入上述 宿主程序 (Host) 代码
+   └── plugin/
+       └── main.go  # 写入上述 插件程序 (Plugin) 代码
+   ```
+
+2. **初始化 Go 模块**：
+
+   初始化一个新的 Go 模块：
+ 
+   ```shell
+   go mod init my-project
+   go mod tidy
+   ```
+
+3. **编译插件程序**：
+
+   宿主程序在启动时会加载当前执行目录下的 `./my-plugin` 可执行文件。您需要将插件编译并输出到 `host` 目录下：
+
+   ```shell
+   go build -o ./host/my-plugin ./plugin
+   ```
+
+4. **运行宿主服务**：
+
+   进入 `host` 目录并运行宿主进程：
+
+   ```shell
+   cd host
+   go run main.go
+   ```

@@ -94,7 +94,7 @@ plugo/
 
 Compile the host orchestrator and all plugins:
 
-```bash
+```shell
 cd examples
 make build
 ```
@@ -105,7 +105,7 @@ make build
 
 Execute the host process from the `examples` directory:
 
-```bash
+```shell
 cd examples
 make run
 ```
@@ -199,3 +199,43 @@ func main() {
 	}
 }
 ```
+
+### Build and Run the Example
+
+To run this simple example, you can organize your project as follows:
+
+1. **Create Directory Structure**:
+
+   ```text
+   my-project/
+   ├── host/
+   │   └── main.go  # Paste Host Application code here
+   └── plugin/
+       └── main.go  # Paste Plugin Application code here
+   ```
+
+2. **Initialize Go Module**:
+
+   Initialize a new module:
+
+   ```shell
+   go mod init my-project
+   go mod tidy
+   ```
+
+3. **Compile the Plugin**:
+
+   The host application expects the plugin executable to be named `my-plugin` in its running directory. Compile the plugin package and place it under the `host` directory:
+
+   ```shell
+   go build -o ./host/my-plugin ./plugin
+   ```
+
+4. **Run the Host Application**:
+
+   Navigate to the `host` directory and execute the host process:
+
+   ```shell
+   cd host
+   go run main.go
+   ```
